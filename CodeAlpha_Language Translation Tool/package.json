@@ -1,0 +1,22 @@
+{
+  "name": "polyglot-translator",
+  "version": "1.0.0",
+  "description": "Premium Language Translation Tool & Learning Hub",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve"
+  },
+  "keywords": [
+    "translator",
+    "language",
+    "learning",
+    "tts",
+    "stt",
+    "glassmorphism"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "serve": "^14.2.0"
+  }
+}

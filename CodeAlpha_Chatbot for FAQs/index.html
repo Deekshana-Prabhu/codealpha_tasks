@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart FAQ Chatbot | NLP & Cosine Similarity Engine</title>
+  
+  <!-- Google Fonts & FontAwesome Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-theme="dark">
+
+  <!-- Background Animated Gradient Mesh -->
+  <div class="bg-mesh"></div>
+
+  <!-- Header Section -->
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-icon"><i class="fas fa-robot"></i></div>
+      <div class="brand-text">
+        <h1>Smart FAQ Bot</h1>
+        <span>NLP & Cosine Similarity Engine</span>
+      </div>
+    </div>
+
+    <!-- Active Product Selected Indicator Badge in Header -->
+    <div class="active-product-badge" id="headerProductBadge">
+      <i class="fas fa-shopping-bag"></i> 
+      <span>Selected Product: <strong id="headerProductName">E-Commerce & Online Store</strong></span>
+    </div>
+
+    <!-- Main Navigation Tabs -->
+    <nav class="app-nav">
+      <button class="nav-tab active" data-tab="chat">
+        <i class="fas fa-comments"></i> <span>Chatbot</span>
+      </button>
+      <button class="nav-tab" data-tab="kb">
+        <i class="fas fa-database"></i> <span>Knowledge Base</span>
+      </button>
+      <button class="nav-tab" data-tab="nlp">
+        <i class="fas fa-microscope"></i> <span>NLP Visualizer</span>
+      </button>
+      <button class="nav-tab" data-tab="analytics">
+        <i class="fas fa-chart-bar"></i> <span>Analytics</span>
+      </button>
+      <button class="nav-tab" data-tab="code">
+        <i class="fas fa-code"></i> <span>Python Code</span>
+      </button>
+    </nav>
+
+    <!-- Controls & Toggles -->
+    <div class="header-actions">
+      <button class="icon-btn" id="ttsToggleBtn" title="Toggle Voice Read Aloud (TTS)">
+        <i class="fas fa-volume-up"></i>
+      </button>
+      <button class="icon-btn active" id="audioToggleBtn" title="Toggle Sound Effects">
+        <i class="fas fa-music"></i>
+      </button>
+      <button class="icon-btn" id="themeToggleBtn" title="Toggle Light/Dark Theme">
+        <i class="fas fa-moon"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main App Layout Container -->
+  <main class="main-container">
+
+    <!-- ====================================================================
+         TAB 1: INTERACTIVE CHATBOT VIEW
+         ==================================================================== -->
+    <div class="tab-view active" id="view-chat">
+      
+      <!-- Chatbot Sidebar (Product Selection & Quick Topics) -->
+      <aside class="chat-sidebar">
+        <div class="sidebar-section">
+          <h3><i class="fas fa-layer-group"></i> Choose Product / Topic</h3>
+          <div class="dataset-selector">
+            <button class="dataset-btn active" data-dataset="ecommerce">
+              <i class="fas fa-shopping-bag"></i> E-Commerce Store
+            </button>
+            <button class="dataset-btn" data-dataset="saas">
+              <i class="fas fa-cloud"></i> SaaS Cloud Platform
+            </button>
+            <button class="dataset-btn" data-dataset="university">
+              <i class="fas fa-graduation-cap"></i> University Admissions
+            </button>
+          </div>
+        </div>
+
+        <div class="sidebar-section" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+          <h3><i class="fas fa-bolt"></i> Sample Questions</h3>
+          <div class="quick-topics" id="quickTopicsContainer">
+            <!-- Dynamic topic chips rendered here -->
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Chat Area -->
+      <section class="chat-main">
+        <!-- Chat Header -->
+        <div class="chat-header">
+          <div class="chat-header-info">
+            <div class="status-dot"></div>
+            <div>
+              <div class="chat-title" id="chatHeaderTitle">AI FAQ Assistant</div>
+              <div class="chat-subtitle" id="chatHeaderSubtitle">Active Product: <strong>E-Commerce & Online Store</strong> (7 FAQs Indexed)</div>
+            </div>
+          </div>
+          <button class="icon-btn" id="clearChatBtn" title="Clear Chat History">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </div>
+
+        <!-- Chat Messages Container -->
+        <div class="chat-messages" id="chatMessages">
+          <div class="message-group bot">
+            <div class="avatar bot"><i class="fas fa-robot"></i></div>
+            <div class="message-bubble">
+              Hello! 👋 I'm your AI FAQ Assistant. Current product topic chosen: <strong>E-Commerce & Online Store</strong>. Select a sample question or ask anything below!
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Input Form Bar -->
+        <div class="chat-input-container">
+          <form class="input-form" id="chatForm">
+            <button type="button" class="icon-btn mic-btn" id="micBtn" title="Voice Input (Speech Recognition)">
+              <i class="fas fa-microphone"></i>
+            </button>
+            <input type="text" class="chat-input" id="chatInput" placeholder="Ask a question (e.g. 'How long does shipping take?')..." autocomplete="off">
+            <button type="submit" class="send-btn" title="Send Message">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </form>
+        </div>
+      </section>
+    </div>
+
+    <!-- ====================================================================
+         TAB 2: KNOWLEDGE BASE / FAQ MANAGER VIEW
+         ==================================================================== -->
+    <div class="tab-view" id="view-kb">
+      <div class="kb-header">
+        <div style="width:100%; display:flex; align-items:center; justify-content:space-between; padding-bottom:0.5rem; border-bottom:1px solid var(--border-color); margin-bottom:0.75rem;">
+          <div style="font-weight:700; font-size:0.95rem; color:var(--accent-cyan);" id="kbProductTitle">
+            <i class="fas fa-database"></i> Managing FAQs for: <strong>E-Commerce & Online Store</strong>
+          </div>
+          <span style="font-size:0.8rem; color:var(--text-muted);" id="kbFaqCountBadge">7 FAQs loaded</span>
+        </div>
+
+        <div class="kb-search-bar">
+          <i class="fas fa-search" style="color:var(--text-muted)"></i>
+          <input type="text" class="kb-search-input" id="kbSearchInput" placeholder="Search FAQs by question, answer, or keyword...">
+        </div>
+
+        <select class="form-select" id="kbCategoryFilter" style="width: auto;">
+          <option value="all">All Categories</option>
+        </select>
+
+        <div style="display:flex; gap:0.6rem;">
+          <button class="primary-btn" id="addFaqBtn">
+            <i class="fas fa-plus"></i> Add New FAQ
+          </button>
+          <button class="secondary-btn" id="exportFaqBtn">
+            <i class="fas fa-download"></i> Export JSON
+          </button>
+          <label class="secondary-btn" style="margin:0; cursor:pointer;">
+            <i class="fas fa-upload"></i> Import JSON
+            <input type="file" id="importFaqInput" accept=".json" style="display:none;">
+          </label>
+        </div>
+      </div>
+
+      <!-- FAQ Grid Cards Container -->
+      <div class="faq-grid" id="faqGridContainer">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         TAB 3: NLP SIMILARITY INSPECTOR VIEW
+         ==================================================================== -->
+    <div class="tab-view" id="view-nlp">
+      <div class="nlp-section">
+        <div class="nlp-section-title"><i class="fas fa-cogs"></i> NLP Pipeline Tokenization Breakdown</div>
+        <div class="pipeline-steps">
+          <div class="step-card">
+            <div class="step-header">1. Raw Input Tokens</div>
+            <div class="tokens-list" id="nlpRawTokens">
+              <span style="color:var(--text-muted)">Send a chat query to inspect pipeline</span>
+            </div>
+          </div>
+
+          <div class="step-card">
+            <div class="step-header">2. Cleaned Tokens (Stop-Words Removed)</div>
+            <div class="tokens-list" id="nlpCleanedTokens">
+              <span style="color:var(--text-muted)">-</span>
+            </div>
+          </div>
+
+          <div class="step-card">
+            <div class="step-header">3. Stemmed Tokens (Porter Stemmer)</div>
+            <div class="tokens-list" id="nlpStemmedTokens">
+              <span style="color:var(--text-muted)">-</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nlp-section">
+        <div class="nlp-section-title"><i class="fas fa-project-diagram"></i> TF-IDF Vector Terms & Weights</div>
+        <div class="tokens-list" id="nlpVectorTerms">
+          <span style="color:var(--text-muted)">No query evaluated yet</span>
+        </div>
+      </div>
+
+      <div class="nlp-section">
+        <div class="nlp-section-title"><i class="fas fa-chart-line"></i> Cosine Similarity Scores Matrix</div>
+        <div class="similarity-table" id="nlpScoresTable">
+          <div style="color:var(--text-muted); text-align:center; padding:1.5rem;">
+            Ask any question in the chatbot tab to visualize cosine similarity rankings.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         TAB 4: ANALYTICS & INSIGHTS VIEW
+         ==================================================================== -->
+    <div class="tab-view" id="view-analytics">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fas fa-question-circle"></i></div>
+          <div class="stat-info">
+            <h4>Total Queries</h4>
+            <div class="stat-number" id="statTotalQueries">0</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon" style="color:var(--accent-green); background:rgba(16,185,129,0.15)"><i class="fas fa-check-double"></i></div>
+          <div class="stat-info">
+            <h4>Resolution Rate</h4>
+            <div class="stat-number" id="statMatchRate">100%</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon" style="color:var(--accent-cyan); background:rgba(6,182,212,0.15)"><i class="fas fa-smile"></i></div>
+          <div class="stat-info">
+            <h4>Helpful Rating</h4>
+            <div class="stat-number" id="statHelpfulRate">100%</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon" style="color:var(--accent-purple); background:rgba(139,92,246,0.15)"><i class="fas fa-layer-group"></i></div>
+          <div class="stat-info">
+            <h4>Active KB FAQs</h4>
+            <div class="stat-number" id="statKbCount">7</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="data-table-container">
+        <h3 class="nlp-section-title" style="margin-bottom:0.5rem;"><i class="fas fa-exclamation-triangle"></i> Unresolved Queries Log</h3>
+        <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:0.75rem;">
+          Queries with low confidence scores are logged here so admins can add new FAQs to expand the knowledge base.
+        </p>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>User Query</th>
+              <th>Dataset</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="unresolvedTableBody">
+            <tr>
+              <td colspan="4" style="text-align:center; color:var(--text-muted); padding:1.5rem;">No unresolved queries logged yet!</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         TAB 5: PYTHON CODE REFERENCE VIEW
+         ==================================================================== -->
+    <div class="tab-view" id="view-code">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 class="nlp-section-title" style="margin:0;"><i class="fab fa-python"></i> Standalone Python NLP Code (`faq_nlp_bot.py`)</h3>
+        <button class="secondary-btn" id="copyCodeBtn" style="padding:0.4rem 0.8rem; font-size:0.8rem;">
+          <i class="far fa-copy"></i> Copy Code
+        </button>
+      </div>
+      <div class="code-container">
+<pre id="pythonCodeSnippet"><code># Standalone Python Reference Script (faq_nlp_bot.py)
+import sys, re, math
+import numpy as np
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+# Sample FAQ Knowledge Base
+FAQ_DATASET = [
+    {"question": "How long does shipping take and how much does it cost?", "answer": "Standard shipping takes 3-5 business days ($4.99)."},
+    {"question": "What is your return and refund policy?", "answer": "We offer a 30-day money-back guarantee for unused items."},
+    {"question": "How can I track my order status?", "answer": "Check your email for the shipment tracking link."},
+    {"question": "What payment methods do you accept?", "answer": "We accept Visa, Mastercard, PayPal, and Apple Pay."},
+    {"question": "How do I reset my account password?", "answer": "Click 'Forgot Password' on the login page to receive a reset link."}
+]
+
+class PythonFAQBot:
+    def __init__(self, faqs=FAQ_DATASET):
+        self.faqs = faqs
+        self.vectorizer = TfidfVectorizer(stop_words='english')
+        self.questions = [f["question"] for f in faqs]
+        self.matrix = self.vectorizer.fit_transform(self.questions)
+
+    def match_question(self, user_query):
+        query_vec = self.vectorizer.transform([user_query])
+        similarities = cosine_similarity(query_vec, self.matrix).flatten()
+        best_idx = np.argmax(similarities)
+        score = float(similarities[best_idx])
+        
+        return {
+            "question": self.faqs[best_idx]["question"],
+            "answer": self.faqs[best_idx]["answer"] if score >= 0.25 else "No matching FAQ found.",
+            "score": score
+        }
+
+bot = PythonFAQBot()
+print(bot.match_question("How do I get a refund for my order?"))
+</code></pre>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FAQ Modal Dialog (Add / Edit) -->
+  <div class="modal-overlay" id="faqModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 style="font-size:1.05rem; font-weight:700;"><i class="fas fa-edit"></i> Add / Edit FAQ Item</h3>
+        <button class="icon-btn" onclick="closeFaqModal()"><i class="fas fa-times"></i></button>
+      </div>
+      <form id="faqModalForm" style="display:flex; flex-direction:column; gap:1rem;">
+        <input type="hidden" id="faqModalId">
+        
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <input type="text" class="form-input" id="faqModalCategory" placeholder="e.g. Shipping, Account, Billing" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Question Text</label>
+          <input type="text" class="form-input" id="faqModalQuestion" placeholder="e.g. How do I change my shipping address?" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Answer Text</label>
+          <textarea class="form-textarea" id="faqModalAnswer" placeholder="Provide a detailed, helpful answer..." required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Keywords / Tags (comma separated)</label>
+          <input type="text" class="form-input" id="faqModalKeywords" placeholder="e.g. address, ship, edit location, delivery">
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:0.6rem; margin-top:0.5rem;">
+          <button type="button" class="secondary-btn" onclick="closeFaqModal()">Cancel</button>
+          <button type="submit" class="primary-btn"><i class="fas fa-save"></i> Save FAQ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- JavaScript Scripts -->
+  <script src="js/nlpEngine.js"></script>
+  <script src="js/faqData.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
