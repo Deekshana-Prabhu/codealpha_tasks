@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vision Tracker - Real-time Object Detection & Tracking</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v={{ range(1, 100000) | random }}">
+    <!-- Chart.js CDN for live reporting -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Dashboard Header -->
+        <header class="glass-panel">
+            <div class="brand-section">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                    </svg>
+                </div>
+                <h1>Vision<span>Tracker</span></h1>
+            </div>
+            <div class="system-status">
+                <div class="status-dot"></div>
+                <span>SYSTEM ONLINE</span>
+            </div>
+        </header>
+
+        <!-- Main Workspace Grid -->
+        <div class="dashboard-grid">
+            
+            <!-- Left Sidebar: Settings and Controls -->
+            <div class="column-sidebar">
+                <div class="glass-panel" style="padding: 20px;">
+                    <h2 class="panel-title">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                        Control Center
+                    </h2>
+                    
+                    <!-- Source Selection -->
+                    <div class="control-group">
+                        <label>Input Source</label>
+                        <div class="segmented-control">
+                            <button id="src-webcam" class="segmented-btn active">Webcam</button>
+                            <button id="src-file" class="segmented-btn">Video File</button>
+                        </div>
+                        <div id="mirror-control-wrapper" style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="mirror-checkbox" checked style="cursor: pointer; accent-color: var(--accent-blue);">
+                            <label for="mirror-checkbox" style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0; cursor: pointer; text-transform: none; letter-spacing: 0; user-select: none;">Mirror Webcam View</label>
+                        </div>
+                    </div>
+
+                    <!-- File Uploader (Hidden by default unless file selected) -->
+                    <div id="file-uploader-wrapper" class="control-group" style="display: none; transition: opacity 0.3s ease;">
+                        <label>Upload Video</label>
+                        <div class="file-upload-area" id="drop-area">
+                            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                            <p>Drag & Drop or <span>Browse</span></p>
+                            <input type="file" id="file-input" accept="video/mp4,video/x-m4v,video/*">
+                            
+                            <div class="upload-progress-container" id="progress-container">
+                                <div class="upload-progress-bar">
+                                    <div class="upload-progress-fill" id="progress-fill"></div>
+                                </div>
+                                <span class="upload-status-text" id="upload-status">Uploading...</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Permanent Back to Webcam button in sidebar -->
+                        <div style="margin-top: 12px; display: flex; justify-content: center;">
+                            <button id="btn-back-to-webcam" class="segmented-btn" style="width: 100%; background: rgba(255, 0, 127, 0.15); border: 1px solid var(--accent-magenta); color: var(--accent-magenta); padding: 10px; font-size: 0.85rem; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; font-family: var(--font-sans); transition: var(--transition);">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                                Back to Webcam (Stop Video)
+                            </button>
+                        </div>
+
+                        <div id="active-file-controls" style="display: none; margin-top: 10px; justify-content: space-between; align-items: center; background: rgba(0, 0, 0, 0.15); border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 8px;">
+                            <span id="active-filename-lbl" style="font-size: 0.8rem; color: var(--accent-blue); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px; font-family: var(--font-sans);">video.mp4</span>
+                            <button id="btn-clear-video" class="segmented-btn" style="background: rgba(255, 0, 127, 0.15); border: 1px solid var(--accent-magenta); color: var(--accent-magenta); padding: 4px 10px; font-size: 0.75rem; border-radius: 4px; display: flex; align-items: center; gap: 4px; cursor: pointer; font-family: var(--font-sans);">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                                Back to Webcam
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Model Config -->
+                    <div class="control-group">
+                        <label for="model-select">Detection Model</label>
+                        <select id="model-select" class="styled-select">
+                            <option value="yolov8n">YOLOv8-Nano (Fastest - 3.2M params)</option>
+                            <option value="yolov8s">YOLOv8-Small (Balanced - 11.2M params)</option>
+                        </select>
+                    </div>
+
+                    <!-- Tracker Config -->
+                    <div class="control-group">
+                        <label for="tracker-select">Tracking Algorithm</label>
+                        <select id="tracker-select" class="styled-select">
+                            <option value="custom_sort">Custom SORT Tracker (Position-Velocity)</option>
+                            <option value="bytetrack">YOLO ByteTrack (Advanced IoU)</option>
+                            <option value="botsort">YOLO BoT-SORT (Built-in State-of-the-Art)</option>
+                        </select>
+                    </div>
+
+                    <!-- Confidence Slider -->
+                    <div class="control-group">
+                        <label for="conf-slider">Confidence Threshold</label>
+                        <div class="slider-container">
+                            <input type="range" id="conf-slider" min="0.05" max="0.95" step="0.05" value="0.25">
+                            <span class="slider-val" id="conf-val">0.25</span>
+                        </div>
+                    </div>
+
+                    <!-- IoU Slider -->
+                    <div class="control-group">
+                        <label for="iou-slider">IoU Match Threshold</label>
+                        <div class="slider-container">
+                            <input type="range" id="iou-slider" min="0.1" max="0.9" step="0.05" value="0.45">
+                            <span class="slider-val" id="iou-val">0.45</span>
+                        </div>
+                    </div>
+
+                    <!-- Class Target Selectors -->
+                    <div class="control-group" style="margin-bottom: 0;">
+                        <label>Filter Target Classes</label>
+                        <div class="class-filters-grid" id="class-filters">
+                            <span class="class-tag active" data-class="all">All Objects</span>
+                            <!-- Dynamically populated from backend -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle Column: Main HUD Viewport -->
+            <div class="column-sidebar monitor-column">
+                <div class="glass-panel video-container" id="viewport-panel">
+                    <!-- Target Corner Brackets -->
+                    <div class="hud-corner corner-tl"></div>
+                    <div class="hud-corner corner-tr"></div>
+                    <div class="hud-corner corner-bl"></div>
+                    <div class="hud-corner corner-br"></div>
+                    
+                    <!-- HUD Overlays -->
+                    <div class="video-hud">
+                        <div class="hud-top">
+                            <div class="hud-badge-rec">
+                                <div class="hud-dot-rec"></div>
+                                <span id="hud-source-lbl">WEBCAM LIVE</span>
+                            </div>
+                            <div class="hud-badge-info">
+                                PROCESSOR: <span id="hud-processor-lbl">YOLOv8n + Custom SORT</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Floating HUD Back Button -->
+                        <div id="hud-back-btn-container" style="display: none; justify-content: center; align-items: center; width: 100%; position: absolute; bottom: 40px; left: 0; pointer-events: auto; z-index: 100;">
+                            <button id="hud-btn-clear-video" class="segmented-btn" style="background: rgba(255, 0, 127, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid var(--accent-magenta); color: #fff; padding: 10px 20px; font-size: 0.85rem; border-radius: 30px; display: flex; align-items: center; gap: 8px; cursor: pointer; font-family: var(--font-sans); box-shadow: 0 4px 15px rgba(255, 0, 127, 0.4); transition: var(--transition);">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                                Stop Tracking & Go Back
+                            </button>
+                        </div>
+
+                        <div class="hud-bottom">
+                            <div id="hud-resolution-lbl">RESOLUTION: 640 x 480</div>
+                            <div id="hud-time-lbl">TIME: --:--:--</div>
+                        </div>
+                    </div>
+
+                    <!-- Video Feed Elements -->
+                    <img id="stream-img" src="{{ url_for('video_feed') }}" class="video-stream" alt="Video stream">
+                    
+                    <div class="no-feed-placeholder" id="no-feed" style="display: none;">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                        <p>No video connection found.<br><small>Ensure webcam access is enabled or try uploading a video file.</small></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar: Stats and Analytics -->
+            <div class="column-sidebar">
+                <!-- Analytics Cards -->
+                <div class="stats-cards-grid">
+                    <div class="glass-panel stat-micro-card">
+                        <span class="stat-lbl">FPS Speed</span>
+                        <div class="stat-val val-fps" id="stat-fps">0.0</div>
+                    </div>
+                    <div class="glass-panel stat-micro-card">
+                        <span class="stat-lbl">Tracked Objects</span>
+                        <div class="stat-val val-count" id="stat-count">0</div>
+                    </div>
+                </div>
+
+                <!-- Live Metrics Chart Panel -->
+                <div class="glass-panel" style="padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+                    <h2 class="panel-title" style="margin-bottom: 8px;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"></path></svg>
+                        Tracking Timeline
+                    </h2>
+                    <div class="chart-container">
+                        <canvas id="live-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Live Logs Panel -->
+                <div class="glass-panel" style="padding: 16px; flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                    <h2 class="panel-title" style="margin-bottom: 12px;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        Active Track Register
+                    </h2>
+                    <div class="tracked-table-wrapper">
+                        <table class="tracked-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Class</th>
+                                    <th>Confidence</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tracker-table-body">
+                                <tr>
+                                    <td colspan="3" class="row-placeholder">No active tracks detected.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Frontend logic module -->
+    <script src="{{ url_for('static', filename='js/main.js') }}?v={{ range(1, 100000) | random }}"></script>
+</body>
+</html>
