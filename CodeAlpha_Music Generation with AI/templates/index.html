@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RagaAI - Tamil Music Generator with AI</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for Training Loss Plot -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Tone.js for Web Audio Synth -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Tone.js MIDI Parser -->
+    <script src="https://unpkg.com/@tonejs/midi"></script>
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="glow-bg"></div>
+    <div class="app-container">
+        
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-area">
+                <i class="fa-solid fa-music logo-icon"></i>
+                <h1>Raga<span>AI</span></h1>
+                <span class="badge">Tamil Edition</span>
+            </div>
+            <p class="subtitle">Deep Learning LSTM Music Generation. Powered by PyTorch & Web Audio</p>
+        </header>
+
+        <!-- Main Dashboard Layout -->
+        <div class="dashboard-grid">
+            
+            <!-- LEFT COLUMN: TRAINING & DATASET -->
+            <div class="dashboard-column">
+                
+                <!-- Dataset Card -->
+                <div class="glass-card" id="dataset-panel">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-folder-open"></i> 1. Select Training Dataset</h2>
+                        <div class="header-action">
+                            <span class="file-count-badge" id="total-songs-count">0 songs</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="dataset-selector-wrapper">
+                            <div class="custom-select-container">
+                                <label for="dataset-select">Active Dataset:</label>
+                                <select id="dataset-select" class="form-control">
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- MIDI Files list inside selected dataset -->
+                        <div class="midi-files-list-container">
+                            <label>Melodies in dataset:</label>
+                            <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 6px;"><i class="fa-solid fa-circle-info"></i> Click a melody below to play and visualize it!</span>
+                            <ul id="midi-files-list" class="midi-list">
+                                <!-- Populated dynamically -->
+                            </ul>
+                        </div>
+
+                        <!-- File Upload -->
+                        <div class="upload-zone" id="upload-zone">
+                            <input type="file" id="midi-file-input" accept=".mid,.midi" style="display: none;">
+                            <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                            <p>Drag & drop MIDI files here, or <span class="browse-link">browse</span></p>
+                            <span class="upload-tip">Upload your own Tamil songs / classical MIDI files</span>
+                            <div id="upload-status" class="upload-status"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Model Config & Training Card -->
+                <div class="glass-card" id="training-panel">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-brain"></i> 2. Model & Training Hub</h2>
+                        <span class="status-indicator idle" id="training-status-indicator">Idle</span>
+                    </div>
+                    <div class="card-body">
+                        <!-- Configuration Form -->
+                        <div class="config-grid">
+                            <div class="form-group">
+                                <label for="param-epochs">Epochs</label>
+                                <input type="number" id="param-epochs" value="20" min="1" max="1000" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="param-seq-length">Seq Length</label>
+                                <input type="number" id="param-seq-length" value="16" min="4" max="64" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="param-lr">Learning Rate</label>
+                                <input type="number" id="param-lr" value="0.005" step="0.001" min="0.0001" max="0.1" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="param-hidden">Hidden Units</label>
+                                <input type="number" id="param-hidden" value="128" step="32" min="32" max="512" class="form-control">
+                            </div>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="button-row">
+                            <button id="btn-start-train" class="btn btn-primary btn-glowing"><i class="fa-solid fa-play"></i> Train Model</button>
+                            <button id="btn-stop-train" class="btn btn-danger" disabled><i class="fa-solid fa-stop"></i> Stop</button>
+                        </div>
+
+                        <!-- Real-time Training Progress -->
+                        <div class="training-progress-container" id="training-progress-box" style="display: none;">
+                            <div class="progress-info">
+                                <span id="progress-epoch-text">Epoch 0/0</span>
+                                <span id="progress-loss-text">Loss: --</span>
+                            </div>
+                            <div class="progress-bar-wrapper">
+                                <div class="progress-bar-fill" id="progress-bar-fill" style="width: 0%"></div>
+                            </div>
+                            <div class="training-logs" id="training-logs">
+                                <!-- Appends training status updates -->
+                            </div>
+                        </div>
+
+                        <!-- Chart container -->
+                        <div class="chart-container" id="chart-wrapper">
+                            <canvas id="lossChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT COLUMN: SEQUENCER, GENERATION, SYNTH, PLAYBACK -->
+            <div class="dashboard-column">
+                
+                <!-- Melody Step Sequencer -->
+                <div class="glass-card" id="sequencer-panel">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-table-cells"></i> Melody Composer (Seed Builder)</h2>
+                        <div class="header-actions">
+                            <button id="btn-clear-seq" class="btn btn-sm btn-outline"><i class="fa-solid fa-trash-can"></i> Clear</button>
+                            <button id="btn-play-seq" class="btn btn-sm btn-secondary"><i class="fa-solid fa-play"></i> Listen</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="sequencer-description">Draw your own Tamil-style melody seed. Notes correspond to E Minor Pentatonic (a common scale in folk & film music).</p>
+                        
+                        <div class="sequencer-scroll-container">
+                            <div class="sequencer-grid" id="sequencer-grid">
+                                <!-- Populated dynamically by javascript -->
+                            </div>
+                        </div>
+                        
+                        <div class="sequencer-action-row">
+                            <button id="btn-use-seed" class="btn btn-secondary btn-full"><i class="fa-solid fa-circle-arrow-down"></i> Use Sequencer Melody as Seed for AI</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Generation Card -->
+                <div class="glass-card" id="generation-panel">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-wand-magic-sparkles"></i> 3. AI Music Generator</h2>
+                    </div>
+                    <div class="card-body">
+                        <!-- Generation controls -->
+                        <div class="config-grid">
+                            <div class="form-group">
+                                <label for="gen-length">Notes Length</label>
+                                <input type="number" id="gen-length" value="100" min="10" max="500" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="gen-temp">Creativity (Temp)</label>
+                                <div class="slider-container">
+                                    <input type="range" id="gen-temp" min="0.2" max="2.0" step="0.1" value="1.0" class="slider">
+                                    <span id="temp-val">1.0</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="gen-bpm">Tempo (BPM)</label>
+                                <input type="number" id="gen-bpm" value="110" min="40" max="240" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="gen-dur">Note Speed</label>
+                                <select id="gen-dur" class="form-control">
+                                    <option value="0.25">Quarter note (Slow)</option>
+                                    <option value="0.5" selected>Eighth note (Medium)</option>
+                                    <option value="1.0">Sixteenth note (Fast)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="button-row">
+                            <button id="btn-generate" class="btn btn-success btn-glowing btn-full"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate AI Music</button>
+                        </div>
+
+                        <!-- Generation Loading Status -->
+                        <div id="gen-loading" class="gen-loading" style="display: none;">
+                            <div class="pulse-spinner"></div>
+                            <span>AI is composing a new melody sequence...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Synthesizer Settings -->
+                <div class="glass-card" id="synth-panel">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-sliders"></i> Synthesizer & Effects Panel</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="synth-config-layout">
+                            <div class="form-group synth-instrument-select">
+                                <label for="synth-voice">Synth Instrument:</label>
+                                <select id="synth-voice" class="form-control">
+                                    <option value="piano">Acoustic Piano (Physical modeling)</option>
+                                    <option value="sine">Warm Sine Wave</option>
+                                    <option value="square">Retro Square Wave</option>
+                                    <option value="triangle" selected>Mellow Triangle Wave</option>
+                                    <option value="fm">FM Bell Synth</option>
+                                </select>
+                            </div>
+
+                            <div class="envelope-effects-grid">
+                                <!-- ADSR Envelope -->
+                                <div class="envelope-controls">
+                                    <label class="section-label">ADSR Envelope</label>
+                                    <div class="slider-row">
+                                        <span>A</span>
+                                        <input type="range" id="synth-attack" min="0.005" max="0.5" step="0.01" value="0.05" class="slider">
+                                        <span id="attack-val" class="slider-val">0.05</span>
+                                    </div>
+                                    <div class="slider-row">
+                                        <span>D</span>
+                                        <input type="range" id="synth-decay" min="0.05" max="1.0" step="0.05" value="0.2" class="slider">
+                                        <span id="decay-val" class="slider-val">0.2</span>
+                                    </div>
+                                    <div class="slider-row">
+                                        <span>S</span>
+                                        <input type="range" id="synth-sustain" min="0.0" max="1.0" step="0.05" value="0.6" class="slider">
+                                        <span id="sustain-val" class="slider-val">0.6</span>
+                                    </div>
+                                    <div class="slider-row">
+                                        <span>R</span>
+                                        <input type="range" id="synth-release" min="0.1" max="3.0" step="0.1" value="0.8" class="slider">
+                                        <span id="release-val" class="slider-val">0.8</span>
+                                    </div>
+                                </div>
+
+                                <!-- Effects -->
+                                <div class="effects-controls">
+                                    <label class="section-label">Audio Effects</label>
+                                    <div class="slider-row">
+                                        <span>Reverb</span>
+                                        <input type="range" id="fx-reverb" min="0" max="1" step="0.05" value="0.3" class="slider">
+                                        <span id="reverb-val" class="slider-val">30%</span>
+                                    </div>
+                                    <div class="slider-row">
+                                        <span>Delay</span>
+                                        <input type="range" id="fx-delay" min="0" max="1" step="0.05" value="0.15" class="slider">
+                                        <span id="delay-val" class="slider-val">15%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Playback & Visualization Panel -->
+                <div class="glass-card" id="playback-panel">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-circle-play"></i> 4. Playback, Export & Visualizer</h2>
+                    </div>
+                    <div class="card-body">
+                        <!-- Playback Controls -->
+                        <div class="playback-controls-wrapper">
+                            <button id="btn-play-generated" class="btn btn-primary" disabled><i class="fa-solid fa-play"></i> Play</button>
+                            <button id="btn-stop-generated" class="btn btn-secondary" disabled><i class="fa-solid fa-stop"></i> Stop</button>
+                            <button id="btn-record-audio" class="btn btn-danger" disabled><i class="fa-solid fa-record-vinyl"></i> Record WAV</button>
+                            <a id="link-download-midi" class="btn btn-outline disabled" href="#" download><i class="fa-solid fa-download"></i> Download MIDI</a>
+                        </div>
+                        
+                        <div class="playback-progress-container">
+                            <span id="playback-time">0:00 / 0:00</span>
+                            <div class="progress-bar-wrapper">
+                                <div class="progress-bar-fill" id="playback-progress-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Visualizer Canvas -->
+                        <div class="visualizer-container">
+                            <div class="canvas-label">Waterfall Piano Roll</div>
+                            <canvas id="piano-roll-canvas" width="680" height="200"></canvas>
+                        </div>
+
+                        <!-- Virtual Keyboard -->
+                        <div class="piano-keyboard-container">
+                            <div class="piano-keyboard" id="piano-keyboard">
+                                <!-- Generated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <footer class="app-footer-bar">
+            <p>Made with <i class="fa-solid fa-heart text-danger"></i> for CodeAlpha. Dynamic models powered by PyTorch.</p>
+        </footer>
+    </div>
+
+    <!-- Main Client Script -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
